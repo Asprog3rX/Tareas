@@ -32,6 +32,7 @@ const registrarUsuario = async (req, res) => {
 const loginUsuario = async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log('Login attempt:', { username, password });
 
     const result = await pool.query(
       'SELECT * FROM users WHERE username = $1',
@@ -39,11 +40,13 @@ const loginUsuario = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      console.log('Usuario no encontrado');
       return res.status(400).json({ error: 'Usuario o contraseña incorrectos' });
     }
 
     const user = result.rows[0];
     const esValido = await bcrypt.compare(password, user.password);
+    console.log('Password válida?', esValido);
 
     if (!esValido) {
       return res.status(400).json({ error: 'Usuario o contraseña incorrectos' });
