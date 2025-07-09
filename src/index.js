@@ -14,8 +14,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Rutas API
-app.use('/api', routes);
+// Middleware para loguear cada petición (todas las rutas que llegan)
+app.use((req, res, next) => {
+  console.log('[REQUEST]', req.method, req.originalUrl);
+  next();
+});
+
+// --- PRUEBA 1: Comentar rutas API para probar si error sigue ---
+// app.use('/api', routes); 
+
+// --- Si quieres probar que sí las cargas, descomenta la línea anterior ---
 
 // Servir archivos estáticos (por ejemplo, PDFs subidos)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
@@ -45,10 +53,18 @@ if (fs.existsSync(buildPath)) {
   console.warn('⚠️ La carpeta build no fue encontrada. El frontend no será servido.');
 }
 
-// Middleware global para capturar errores en rutas
+// Middleware global para capturar errores en rutas y mostrar detalles
 app.use((err, req, res, next) => {
   console.error('Error capturado en middleware global:', err);
   res.status(500).json({ error: 'Error interno del servidor', message: err.message, stack: err.stack });
+});
+
+// Capturar errores no capturados globales para debug
+process.on('uncaughtException', (err) => {
+  console.error('uncaughtException:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('unhandledRejection en:', promise, 'razón:', reason);
 });
 
 // Log básico de rutas cargadas (manual)
@@ -70,14 +86,6 @@ console.log('POST /api/tasks/:id/entregas/file');
 console.log('GET  /api/tasks/:tareaId/entregas/:usuarioId/archivo');
 console.log('GET  /entregas/:archivo');
 console.log('=========================');
-
-// Capturar errores no capturados globales para debug
-process.on('uncaughtException', (err) => {
-  console.error('uncaughtException:', err);
-});
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('unhandledRejection en:', promise, 'razón:', reason);
-});
 
 // Puerto
 const PORT = process.env.PORT || 5000;
