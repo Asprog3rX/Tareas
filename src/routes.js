@@ -145,6 +145,19 @@ router.stack.forEach((r) => {
     console.log(`${Object.keys(r.route.methods).join(', ').toUpperCase()} ${r.route.path}`);
   }
 });
+function printRoutes(router) {
+  console.log('=== RUTAS REGISTRADAS ===');
+  router.stack.forEach((layer) => {
+    if (layer.route && layer.route.path) {
+      const methods = Object.keys(layer.route.methods)
+        .map(m => m.toUpperCase())
+        .join(', ');
+      console.log(`${methods} ${layer.route.path}`);
+    }
+  });
+  console.log('=========================');
+}
 
+printRoutes(router);
 
 module.exports = router;
