@@ -3,7 +3,7 @@ const fs = require('fs');
 const multer = require('multer');
 const pool = require('./db');
 
-// Carpeta donde se guardan los archivos PDF
+// Directorio donde se guardan los archivos PDF
 const uploadDir = path.join(__dirname, '..', 'uploads');
 
 // Configuración de almacenamiento con multer

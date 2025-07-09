@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-const pool = require('./db'); // Correcto, está en el mismo nivel src/
+const pool = require('./db');
 
 const {
   crearTarea,
@@ -17,29 +17,36 @@ const {
   subirArchivoEntrega,
   descargarArchivoEntrega,
   obtenerEntregas,
-} = require('./controllers'); // controllers debe estar en src/, ajusta si no está
+} = require('./controllers');
 
 const {
   registrarUsuario,
   loginUsuario
-} = require('./authController'); // Cambiado '../authController' a './authController'
+} = require('./authController');
 
 const {
   verificarToken,
   verificarRol
-} = require('./middleware/auth'); // Cambiado '../middleware/auth' a './middleware/auth'
+} = require('./middleware/auth');
 
+// Middleware para loguear cada petición
+router.use((req, res, next) => {
+  console.log(`[RUTA] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+console.log('Montando rutas de autenticación');
 // ===== RUTAS AUTENTICACIÓN =====
 router.post('/register', registrarUsuario);
 router.post('/login', loginUsuario);
 
+console.log('Montando rutas de tareas');
 // ===== TAREAS =====
 router.post('/tasks', verificarToken, verificarRol(['administrativo']), crearTarea);
 router.get('/tasks', verificarToken, obtenerTareas);
 router.put('/tasks/:id', verificarToken, verificarRol(['administrativo']), editarTarea);
 router.delete('/tasks/:id', verificarToken, verificarRol(['administrativo']), eliminarTarea);
 
-// Cambiar solo estado de la tarea
 router.patch('/tasks/:id/status', verificarToken, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -64,16 +71,17 @@ router.patch('/tasks/:id/status', verificarToken, async (req, res) => {
   }
 });
 
+console.log('Montando rutas de subtareas');
 // ===== SUBTAREAS =====
 router.get('/tasks/:taskId/subtasks', verificarToken, obtenerSubtareas);
 router.post('/tasks/:taskId/subtasks', verificarToken, verificarRol(['administrativo']), crearSubtarea);
 router.put('/subtasks/:id', verificarToken, verificarRol(['administrativo']), editarSubtarea);
 router.delete('/subtasks/:id', verificarToken, verificarRol(['administrativo']), eliminarSubtarea);
 
+console.log('Montando rutas de entregas');
 // ===== ENTREGAS =====
 router.get('/tasks/:taskId/entregas', verificarToken, obtenerEntregas);
 
-// Registrar entrega (sin archivo PDF)
 router.post('/tasks/:id/entregas', verificarToken, async (req, res) => {
   const { id } = req.params;
   const usuarioId = req.user.id;
@@ -100,7 +108,6 @@ router.post('/tasks/:id/entregas', verificarToken, async (req, res) => {
   }
 });
 
-// Subir entrega con archivo PDF
 router.post(
   '/tasks/:id/entregas/file',
   verificarToken,
@@ -108,14 +115,12 @@ router.post(
   subirArchivoEntrega
 );
 
-// Descargar archivo de entrega
 router.get(
   '/tasks/:tareaId/entregas/:usuarioId/archivo',
   verificarToken,
   descargarArchivoEntrega
 );
 
-// Descarga directa por nombre (uso público)
 router.get('/entregas/:archivo', (req, res) => {
   const { archivo } = req.params;
   const filePath = path.join(__dirname, '..', 'uploads', archivo);
