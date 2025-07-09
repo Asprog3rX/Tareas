@@ -20,19 +20,25 @@ app.use('/api', routes);
 // Servir archivos estáticos (por ejemplo, PDFs subidos)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// Servir frontend React si existe build dentro del backend
+// Verificar y mostrar si la carpeta build existe
 const buildPath = path.join(__dirname, 'build');
+console.log('Buscando carpeta build en:', buildPath);
+console.log('¿Existe build?', fs.existsSync(buildPath));
+
 if (fs.existsSync(buildPath)) {
+  // Servir frontend React estático
   app.use(express.static(buildPath));
-  
-  // Para todas las demás rutas que no sean /api o /uploads, enviar index.html para React Router
+
+  // Todas las rutas que no sean /api ni /uploads servirán index.html para React Router
   app.get('*', (req, res) => {
-    // Evitar interferir con rutas de la API o uploads
-    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+    if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/uploads')) {
+      // Dejar pasar la petición o responder 404 para rutas API y uploads no encontradas
       return res.status(404).send('Not found');
     }
     res.sendFile(path.join(buildPath, 'index.html'));
   });
+} else {
+  console.warn('⚠️ La carpeta build no fue encontrada. El frontend no será servido.');
 }
 
 // Log básico de rutas cargadas (manual)
