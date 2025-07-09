@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 const { verificarToken, verificarRol } = require('./middleware/auth');
-const routes = require('./routes'); // Asegúrate de que esté bien exportado
+const routes = require('./routes'); // Asegúrate que exporta el router con /login y demás rutas
 
 const app = express();
 
@@ -20,10 +20,36 @@ app.use((req, res, next) => {
   next();
 });
 
-// --- PRUEBA 1: Comentar rutas API para probar si error sigue ---
-// app.use('/api', routes); 
+// --- PRUEBA 1: comentar rutas API para probar si error sigue ---
+// app.use('/api', routes);
 
-// --- Si quieres probar que sí las cargas, descomenta la línea anterior ---
+// --- Para probar que las rutas se cargan, descomenta la línea siguiente ---
+app.use('/api', routes);
+
+// Middleware para loguear cada ruta registrada (automático)
+function printRegisteredRoutes(app) {
+  console.log('=== RUTAS REGISTRADAS AUTOMÁTICAMENTE ===');
+  app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+      // Ruta directa
+      const methods = Object.keys(middleware.route.methods)
+        .map(m => m.toUpperCase())
+        .join(', ');
+      console.log(`${methods} ${middleware.route.path}`);
+    } else if (middleware.name === 'router') {
+      // Rutas dentro de router (como en app.use('/api', routes))
+      middleware.handle.stack.forEach((handler) => {
+        if (handler.route) {
+          const methods = Object.keys(handler.route.methods)
+            .map(m => m.toUpperCase())
+            .join(', ');
+          console.log(`${methods} ${middleware.regexp} + ${handler.route.path}`);
+        }
+      });
+    }
+  });
+}
+printRegisteredRoutes(app);
 
 // Servir archivos estáticos (por ejemplo, PDFs subidos)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
@@ -66,26 +92,6 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('unhandledRejection en:', promise, 'razón:', reason);
 });
-
-// Log básico de rutas cargadas (manual)
-console.log('=== RUTAS REGISTRADAS ===');
-console.log('POST /api/register');
-console.log('POST /api/login');
-console.log('GET  /api/tasks');
-console.log('POST /api/tasks');
-console.log('PUT  /api/tasks/:id');
-console.log('DELETE /api/tasks/:id');
-console.log('PATCH /api/tasks/:id/status');
-console.log('GET  /api/tasks/:taskId/subtasks');
-console.log('POST /api/tasks/:taskId/subtasks');
-console.log('PUT  /api/subtasks/:id');
-console.log('DELETE /api/subtasks/:id');
-console.log('GET  /api/tasks/:taskId/entregas');
-console.log('POST /api/tasks/:id/entregas');
-console.log('POST /api/tasks/:id/entregas/file');
-console.log('GET  /api/tasks/:tareaId/entregas/:usuarioId/archivo');
-console.log('GET  /entregas/:archivo');
-console.log('=========================');
 
 // Puerto
 const PORT = process.env.PORT || 5000;
