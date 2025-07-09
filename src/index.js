@@ -26,20 +26,30 @@ console.log('Buscando carpeta build en:', buildPath);
 console.log('¿Existe build?', fs.existsSync(buildPath));
 
 if (fs.existsSync(buildPath)) {
-  // Servir frontend React estático
-  app.use(express.static(buildPath));
+  try {
+    // Servir frontend React estático
+    app.use(express.static(buildPath));
 
-  // Todas las rutas que no sean /api ni /uploads servirán index.html para React Router
-  app.get('*', (req, res) => {
-    if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/uploads')) {
-      // Dejar pasar la petición o responder 404 para rutas API y uploads no encontradas
-      return res.status(404).send('Not found');
-    }
-    res.sendFile(path.join(buildPath, 'index.html'));
-  });
+    // Todas las rutas que no sean /api ni /uploads servirán index.html para React Router
+    app.get('*', (req, res) => {
+      if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/uploads')) {
+        // Dejar pasar la petición o responder 404 para rutas API y uploads no encontradas
+        return res.status(404).send('Not found');
+      }
+      res.sendFile(path.join(buildPath, 'index.html'));
+    });
+  } catch (err) {
+    console.error('Error sirviendo el build:', err);
+  }
 } else {
   console.warn('⚠️ La carpeta build no fue encontrada. El frontend no será servido.');
 }
+
+// Middleware global para capturar errores en rutas
+app.use((err, req, res, next) => {
+  console.error('Error capturado en middleware global:', err);
+  res.status(500).json({ error: 'Error interno del servidor', message: err.message, stack: err.stack });
+});
 
 // Log básico de rutas cargadas (manual)
 console.log('=== RUTAS REGISTRADAS ===');
@@ -60,6 +70,14 @@ console.log('POST /api/tasks/:id/entregas/file');
 console.log('GET  /api/tasks/:tareaId/entregas/:usuarioId/archivo');
 console.log('GET  /entregas/:archivo');
 console.log('=========================');
+
+// Capturar errores no capturados globales para debug
+process.on('uncaughtException', (err) => {
+  console.error('uncaughtException:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('unhandledRejection en:', promise, 'razón:', reason);
+});
 
 // Puerto
 const PORT = process.env.PORT || 5000;
