@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs'); // 👈 ESTA LÍNEA FALTABA
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 
@@ -16,16 +17,32 @@ app.use(express.json());
 // Rutas API
 app.use('/api', routes);
 
-// Servir archivos estáticos (PDFs entregados)
+// Servir archivos estáticos (por ejemplo, PDFs subidos)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// Servir los archivos estáticos de React (build)
-app.use(express.static(path.join(__dirname, '..', 'build')));
+// Servir frontend si existe carpeta build (protección para Render)
+const buildPath = path.join(__dirname, '..', 'build');
+if (fs.existsSync(buildPath)) {
+  app.use(express.static(buildPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
+}
 
-// Para cualquier otra ruta no definida en API, enviar el index.html de React
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'build', 'index.html'));
+// Mostrar todas las rutas registradas
+console.log('=== TODAS LAS RUTAS EXPRESS ===');
+app._router.stack.forEach((layer) => {
+  if (layer.route && layer.route.path) {
+    console.log(`${Object.keys(layer.route.methods).join(', ').toUpperCase()} ${layer.route.path}`);
+  } else if (layer.name === 'router' && layer.handle.stack) {
+    layer.handle.stack.forEach((subLayer) => {
+      if (subLayer.route && subLayer.route.path) {
+        console.log(`${Object.keys(subLayer.route.methods).join(', ').toUpperCase()} ${subLayer.route.path}`);
+      }
+    });
+  }
 });
+console.log('===============================');
 
 // Puerto
 const PORT = process.env.PORT || 5000;
