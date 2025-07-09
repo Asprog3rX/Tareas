@@ -1,8 +1,8 @@
 const express = require('express');
-const pool = require('./db');
+const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-const router = express.Router();
+const pool = require('../db');
 
 const {
   crearTarea,
@@ -17,30 +17,34 @@ const {
   subirArchivoEntrega,
   descargarArchivoEntrega,
   obtenerEntregas,
-} = require('./controllers');
+} = require('../controllers');
 
 const {
   registrarUsuario,
   loginUsuario
-} = require('./authController');
+} = require('../authController');
 
 const {
   verificarToken,
   verificarRol
-} = require('./middleware/auth');
+} = require('../middleware/auth');
 
-// === RUTAS DE TAREAS ===
+// ===== RUTAS AUTENTICACIÓN =====
+router.post('/register', registrarUsuario);
+router.post('/login', loginUsuario);
+
+// ===== TAREAS =====
 router.post('/tasks', verificarToken, verificarRol(['administrativo']), crearTarea);
 router.get('/tasks', verificarToken, obtenerTareas);
 router.put('/tasks/:id', verificarToken, verificarRol(['administrativo']), editarTarea);
 router.delete('/tasks/:id', verificarToken, verificarRol(['administrativo']), eliminarTarea);
 
-// === CAMBIAR SOLO ESTADO DE TAREA ===
+// Cambiar solo estado de la tarea
 router.patch('/tasks/:id/status', verificarToken, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-
   const estadosValidos = ['Pendiente', 'En progreso', 'Completada', 'Cancelada'];
+
   if (!estadosValidos.includes(status)) {
     return res.status(400).json({ error: 'Estado inválido' });
   }
@@ -50,27 +54,26 @@ router.patch('/tasks/:id/status', verificarToken, async (req, res) => {
       'UPDATE tasks SET status = $1 WHERE id = $2 RETURNING *',
       [status, id]
     );
-
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Tarea no encontrada' });
     }
-
     res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Error al actualizar estado:', error);
+  } catch (err) {
+    console.error('Error al actualizar estado:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
-// === SUBTAREAS ===
+// ===== SUBTAREAS =====
 router.get('/tasks/:taskId/subtasks', verificarToken, obtenerSubtareas);
 router.post('/tasks/:taskId/subtasks', verificarToken, verificarRol(['administrativo']), crearSubtarea);
 router.put('/subtasks/:id', verificarToken, verificarRol(['administrativo']), editarSubtarea);
 router.delete('/subtasks/:id', verificarToken, verificarRol(['administrativo']), eliminarSubtarea);
 
-// === ENTREGAS ===
+// ===== ENTREGAS =====
 router.get('/tasks/:taskId/entregas', verificarToken, obtenerEntregas);
 
+// Registrar entrega (sin archivo PDF)
 router.post('/tasks/:id/entregas', verificarToken, async (req, res) => {
   const { id } = req.params;
   const usuarioId = req.user.id;
@@ -97,7 +100,7 @@ router.post('/tasks/:id/entregas', verificarToken, async (req, res) => {
   }
 });
 
-// === SUBIR Y DESCARGAR ARCHIVOS DE ENTREGA ===
+// Subir entrega con archivo PDF
 router.post(
   '/tasks/:id/entregas/file',
   verificarToken,
@@ -105,19 +108,17 @@ router.post(
   subirArchivoEntrega
 );
 
+// Descargar archivo de entrega
 router.get(
   '/tasks/:tareaId/entregas/:usuarioId/archivo',
   verificarToken,
   descargarArchivoEntrega
 );
 
-// === DESCARGA DIRECTA DE ARCHIVOS POR NOMBRE (PUBLICA) ===
+// Descarga directa por nombre (uso público)
 router.get('/entregas/:archivo', (req, res) => {
   const { archivo } = req.params;
-
   const filePath = path.join(__dirname, '..', 'uploads', archivo);
-
-  console.log('📁 Buscando archivo en:', filePath);
 
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Archivo no encontrado' });
@@ -132,9 +133,5 @@ router.get('/entregas/:archivo', (req, res) => {
     }
   });
 });
-
-// === AUTENTICACIÓN ===
-router.post('/register', registrarUsuario);
-router.post('/login', loginUsuario);
 
 module.exports = router;

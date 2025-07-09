@@ -2,7 +2,10 @@ const pool = require('./db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secretkey123';
+if (!process.env.JWT_SECRET) {
+  throw new Error("Falta la variable de entorno JWT_SECRET");
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Registro de usuario (opcional)
 const registrarUsuario = async (req, res) => {

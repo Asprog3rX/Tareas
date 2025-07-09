@@ -1,5 +1,9 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || '12345678';
+
+if (!process.env.JWT_SECRET) {
+  throw new Error("Falta la variable de entorno JWT_SECRET");
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const verificarToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
