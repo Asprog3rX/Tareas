@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-const pool = require('./db');
+const pool = require('./db'); // Correcto, está en el mismo nivel src/
 
 const {
   crearTarea,
@@ -17,17 +17,17 @@ const {
   subirArchivoEntrega,
   descargarArchivoEntrega,
   obtenerEntregas,
-} = require('../controllers');
+} = require('./controllers'); // controllers debe estar en src/, ajusta si no está
 
 const {
   registrarUsuario,
   loginUsuario
-} = require('../authController');
+} = require('./authController'); // Cambiado '../authController' a './authController'
 
 const {
   verificarToken,
   verificarRol
-} = require('../middleware/auth');
+} = require('./middleware/auth'); // Cambiado '../middleware/auth' a './middleware/auth'
 
 // ===== RUTAS AUTENTICACIÓN =====
 router.post('/register', registrarUsuario);
