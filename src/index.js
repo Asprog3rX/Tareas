@@ -13,15 +13,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Rutas principales
+// Rutas API
 app.use('/api', routes);
 
 // Servir archivos estáticos (PDFs entregados)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// Ruta de prueba para ver si el servidor responde
-app.get('/', (req, res) => {
-  res.send('🎉 Bienvenido al backend de Gestión de Tareas');
+// Servir los archivos estáticos de React (build)
+app.use(express.static(path.join(__dirname, '..', 'build')));
+
+// Para cualquier otra ruta no definida en API, enviar el index.html de React
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'build', 'index.html'));
 });
 
 // Puerto
