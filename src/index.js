@@ -14,6 +14,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Función para listar rutas del router (incluye routers anidados)
+const getRoutesFromStack = (stack) =>
+  stack
+    .map((layer) => {
+      if (layer.route) {
+        return layer.route.path;
+      } else if (layer.name === 'router' && layer.handle.stack) {
+        return getRoutesFromStack(layer.handle.stack);
+      }
+      return null;
+    })
+    .flat()
+    .filter(Boolean);
+
+// Mostrar rutas cargadas en /api antes de usarlas
+try {
+  const allRoutes = getRoutesFromStack(routes.stack);
+  console.log('Rutas encontradas en router /api:', allRoutes);
+} catch (e) {
+  console.error('Error extrayendo rutas del router:', e);
+}
+
 // Rutas API
 app.use('/api', routes);
 
