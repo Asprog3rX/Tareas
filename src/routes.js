@@ -29,6 +29,7 @@ const {
   verificarRol
 } = require('./middleware/auth');
 
+
 // Middleware para loguear cada petición
 router.use((req, res, next) => {
   console.log(`[RUTA] ${req.method} ${req.originalUrl}`);
@@ -138,5 +139,12 @@ router.get('/entregas/:archivo', (req, res) => {
     }
   });
 });
+console.log('Rutas registradas:');
+router.stack.forEach((r) => {
+  if (r.route && r.route.path) {
+    console.log(`${Object.keys(r.route.methods).join(', ').toUpperCase()} ${r.route.path}`);
+  }
+});
+
 
 module.exports = router;
