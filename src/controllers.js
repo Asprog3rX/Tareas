@@ -249,6 +249,7 @@ const obtenerEntregas = async (req, res) => {
 // Descargar archivo de entrega
 const descargarArchivoEntrega = async (req, res) => {
   try {
+    console.log('Params recibidos:', req.params);
     const { tareaId, usuarioId } = req.params;
 
     const result = await pool.query(
