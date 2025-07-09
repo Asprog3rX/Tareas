@@ -20,12 +20,17 @@ app.use('/api', routes);
 // Servir archivos estáticos (por ejemplo, PDFs subidos)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// 🔐 OPCIONAL: Servir frontend (React) si existe carpeta build
-// Solo útil si combinas frontend y backend en el mismo servidor
-const buildPath = path.join(__dirname, '..', 'frontend', 'build');
+// Servir frontend React si existe build dentro del backend
+const buildPath = path.join(__dirname, 'build');
 if (fs.existsSync(buildPath)) {
   app.use(express.static(buildPath));
+  
+  // Para todas las demás rutas que no sean /api o /uploads, enviar index.html para React Router
   app.get('*', (req, res) => {
+    // Evitar interferir con rutas de la API o uploads
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return res.status(404).send('Not found');
+    }
     res.sendFile(path.join(buildPath, 'index.html'));
   });
 }
