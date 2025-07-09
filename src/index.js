@@ -21,13 +21,13 @@ app.use('/api', routes);
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Servir frontend si existe carpeta build (protección para Render)
-const buildPath = path.join(__dirname, '..', 'build');
-if (fs.existsSync(buildPath)) {
-  app.use(express.static(buildPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(buildPath, 'index.html'));
-  });
-}
+//const buildPath = path.join(__dirname, '..', 'build');
+//if (fs.existsSync(buildPath)) {
+ // app.use(express.static(buildPath));
+  //app.get('*', (req, res) => {
+   // res.sendFile(path.join(buildPath, 'index.html'));
+  //});
+//}
 
 // Mostrar todas las rutas registradas
 console.log('=== TODAS LAS RUTAS EXPRESS ===');
