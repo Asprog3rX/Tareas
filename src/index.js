@@ -20,14 +20,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// --- PRUEBA 1: comentar rutas API para probar si error sigue ---
-// app.use('/api', routes);
-
-// --- Para probar que las rutas se cargan, descomenta la línea siguiente ---
+// Montar rutas API (obligatorio para que existan las rutas)
 app.use('/api', routes);
 
-// Middleware para loguear cada ruta registrada (automático)
+// Función para imprimir rutas (con chequeo seguro)
 function printRegisteredRoutes(app) {
+  if (!app._router || !app._router.stack) {
+    console.warn('No se pudo acceder a app._router.stack — rutas no disponibles aún');
+    return;
+  }
   console.log('=== RUTAS REGISTRADAS AUTOMÁTICAMENTE ===');
   app._router.stack.forEach((middleware) => {
     if (middleware.route) {
@@ -36,19 +37,22 @@ function printRegisteredRoutes(app) {
         .map(m => m.toUpperCase())
         .join(', ');
       console.log(`${methods} ${middleware.route.path}`);
-    } else if (middleware.name === 'router') {
+    } else if (middleware.name === 'router' && middleware.handle && middleware.handle.stack) {
       // Rutas dentro de router (como en app.use('/api', routes))
       middleware.handle.stack.forEach((handler) => {
         if (handler.route) {
           const methods = Object.keys(handler.route.methods)
             .map(m => m.toUpperCase())
             .join(', ');
-          console.log(`${methods} ${middleware.regexp} + ${handler.route.path}`);
+          console.log(`${methods} ${handler.route.path}`);
         }
       });
     }
   });
+  console.log('=========================');
 }
+
+// ** Llama a printRegisteredRoutes acá, después de montar rutas **
 printRegisteredRoutes(app);
 
 // Servir archivos estáticos (por ejemplo, PDFs subidos)
