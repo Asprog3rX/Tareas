@@ -32,11 +32,11 @@ const {
 } = require('./middleware/auth');
 
 
-// Middleware para loguear cada petición
-router.use((req, res, next) => {
-  console.log(`[RUTA] ${req.method} ${req.originalUrl}`);
-  next();
-});
+// Middleware para loguear cada petición (comentado temporalmente)
+// router.use((req, res, next) => {
+//   console.log(`[API] ${req.method} ${req.path}`);
+//   next();
+// });
 
 console.log('Montando rutas de autenticación');
 // ===== RUTAS AUTENTICACIÓN =====
@@ -150,20 +150,6 @@ router.get('/entregas/:filename', (req, res) => {
     }
   });
 });
-// Función para imprimir rutas registradas
-function printRoutes(router) {
-  console.log('=== RUTAS REGISTRADAS ===');
-  router.stack.forEach((layer) => {
-    if (layer.route && layer.route.path) {
-      const methods = Object.keys(layer.route.methods)
-        .map(m => m.toUpperCase())
-        .join(', ');
-      console.log(`${methods} ${layer.route.path}`);
-    }
-  });
-  console.log('=========================');
-}
-
-printRoutes(router);
+console.log('✅ Rutas API cargadas correctamente');
 
 module.exports = router;
