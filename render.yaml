@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: tasys-backend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node src/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
