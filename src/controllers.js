@@ -54,15 +54,46 @@ const crearTarea = async (req, res) => {
   }
 };
 
-// Obtener todas las tareas
+// Obtener tareas según el rol del usuario
 const obtenerTareas = async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT t.*, u.username AS creador_username
-      FROM tasks t
-      LEFT JOIN users u ON t.creator_id = u.id
-      ORDER BY t.created_at DESC
-    `);
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    console.log('Obteniendo tareas para usuario:', { userId, userRole });
+
+    let result;
+    
+    if (userRole === 'administrativo') {
+      // Los administrativos ven todas las tareas
+      result = await pool.query(`
+        SELECT t.*, u.username AS creador_username,
+               CASE 
+                 WHEN e.usuario_id IS NOT NULL THEN 'Entregada'
+                 ELSE t.status 
+               END as status_mostrado
+        FROM tasks t
+        LEFT JOIN users u ON t.creator_id = u.id
+        LEFT JOIN entregas e ON t.id = e.tarea_id
+        ORDER BY t.created_at DESC
+      `);
+    } else {
+      // Los miembros solo ven sus propias tareas
+      result = await pool.query(`
+        SELECT t.*, u.username AS creador_username,
+               CASE 
+                 WHEN e.usuario_id IS NOT NULL THEN 'Entregada'
+                 ELSE t.status 
+               END as status_mostrado
+        FROM tasks t
+        LEFT JOIN users u ON t.creator_id = u.id
+        LEFT JOIN entregas e ON t.id = e.tarea_id AND e.usuario_id = $1
+        WHERE t.creator_id = $1
+        ORDER BY t.created_at DESC
+      `, [userId]);
+    }
+    
+    console.log(`Tareas obtenidas para ${userRole}:`, result.rows.length);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -308,6 +339,80 @@ const descargarArchivoEntrega = async (req, res) => {
   }
 };
 
+// Obtener estadísticas de tareas
+const obtenerEstadisticas = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    console.log('Obteniendo estadísticas para usuario:', { userId, userRole });
+
+    let result;
+    
+    if (userRole === 'administrativo') {
+      // Estadísticas globales para administrativos
+      result = await pool.query(`
+        SELECT 
+          COUNT(*) as total_tareas,
+          COUNT(CASE WHEN status = 'Pendiente' THEN 1 END) as pendientes,
+          COUNT(CASE WHEN status = 'En progreso' THEN 1 END) as en_progreso,
+          COUNT(CASE WHEN status = 'Completada' THEN 1 END) as completadas,
+          COUNT(CASE WHEN status = 'Cancelada' THEN 1 END) as canceladas,
+          COUNT(CASE WHEN e.usuario_id IS NOT NULL THEN 1 END) as entregadas
+        FROM tasks t
+        LEFT JOIN entregas e ON t.id = e.tarea_id
+      `);
+    } else {
+      // Estadísticas personales para miembros
+      result = await pool.query(`
+        SELECT 
+          COUNT(*) as total_tareas,
+          COUNT(CASE WHEN status = 'Pendiente' THEN 1 END) as pendientes,
+          COUNT(CASE WHEN status = 'En progreso' THEN 1 END) as en_progreso,
+          COUNT(CASE WHEN status = 'Completada' THEN 1 END) as completadas,
+          COUNT(CASE WHEN status = 'Cancelada' THEN 1 END) as canceladas,
+          COUNT(CASE WHEN e.usuario_id IS NOT NULL THEN 1 END) as entregadas
+        FROM tasks t
+        LEFT JOIN entregas e ON t.id = e.tarea_id AND e.usuario_id = $1
+        WHERE t.creator_id = $1
+      `, [userId]);
+    }
+    
+    // Obtener estadísticas por usuario (solo para administrativos)
+    let estadisticasPorUsuario = [];
+    if (userRole === 'administrativo') {
+      const usuariosResult = await pool.query(`
+        SELECT 
+          u.id,
+          u.username,
+          COUNT(t.id) as total_tareas,
+          COUNT(CASE WHEN t.status = 'Pendiente' THEN 1 END) as pendientes,
+          COUNT(CASE WHEN t.status = 'En progreso' THEN 1 END) as en_progreso,
+          COUNT(CASE WHEN t.status = 'Completada' THEN 1 END) as completadas,
+          COUNT(CASE WHEN e.usuario_id IS NOT NULL THEN 1 END) as entregadas
+        FROM users u
+        LEFT JOIN tasks t ON u.id = t.creator_id
+        LEFT JOIN entregas e ON t.id = e.tarea_id
+        WHERE u.role = 'miembro'
+        GROUP BY u.id, u.username
+        ORDER BY u.username
+      `);
+      estadisticasPorUsuario = usuariosResult.rows;
+    }
+    
+    const estadisticas = {
+      general: result.rows[0],
+      porUsuario: estadisticasPorUsuario
+    };
+    
+    console.log('Estadísticas obtenidas:', estadisticas);
+    res.json(estadisticas);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener estadísticas' });
+  }
+};
+
 module.exports = {
   upload,
   crearTarea,
@@ -322,4 +427,5 @@ module.exports = {
   verificarArchivoEntrega,
   descargarArchivoEntrega,
   obtenerEntregas,
+  obtenerEstadisticas,
 };

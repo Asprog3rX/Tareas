@@ -18,6 +18,7 @@ const {
   verificarArchivoEntrega,
   descargarArchivoEntrega,
   obtenerEntregas,
+  obtenerEstadisticas,
 } = require('./controllers');
 
 const {
@@ -48,6 +49,9 @@ router.post('/tasks', verificarToken, verificarRol(['administrativo']), crearTar
 router.get('/tasks', verificarToken, obtenerTareas);
 router.put('/tasks/:id', verificarToken, verificarRol(['administrativo']), editarTarea);
 router.delete('/tasks/:id', verificarToken, verificarRol(['administrativo']), eliminarTarea);
+
+// ===== ESTADÍSTICAS =====
+router.get('/stats', verificarToken, obtenerEstadisticas);
 
 router.patch('/tasks/:id/status', verificarToken, async (req, res) => {
   const { id } = req.params;
