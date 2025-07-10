@@ -349,7 +349,7 @@ const obtenerEstadisticas = async (req, res) => {
     let result;
     
     if (userRole === 'administrativo') {
-      // Estadísticas globales solo de miembros para administrativos
+      // Estadísticas globales de TODAS las tareas para administrativos
       result = await pool.query(`
         SELECT 
           COUNT(*) as total_tareas,
@@ -360,7 +360,6 @@ const obtenerEstadisticas = async (req, res) => {
           COUNT(CASE WHEN e.usuario_id IS NOT NULL THEN 1 END) as entregadas
         FROM tasks t
         LEFT JOIN entregas e ON t.id = e.tarea_id
-        WHERE t.creator_id IN (SELECT id FROM users WHERE role = 'miembro')
       `);
     } else {
       // Estadísticas de todas las tareas para miembros

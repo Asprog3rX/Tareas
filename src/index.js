@@ -44,33 +44,59 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Verificar y mostrar si la carpeta build existe
 const buildPath = path.join(__dirname, '..', 'build');
-console.log('Buscando carpeta build en:', buildPath);
-console.log('¿Existe build?', fs.existsSync(buildPath));
+console.log('🔍 Buscando carpeta build en:', buildPath);
+console.log('📁 ¿Existe build?', fs.existsSync(buildPath));
+
+if (fs.existsSync(buildPath)) {
+  console.log('📋 Contenido del directorio build:');
+  try {
+    const files = fs.readdirSync(buildPath);
+    files.forEach(file => {
+      const filePath = path.join(buildPath, file);
+      const stats = fs.statSync(filePath);
+      console.log(`  📄 ${file} - ${stats.isDirectory() ? 'Directorio' : 'Archivo'}`);
+    });
+  } catch (err) {
+    console.error('❌ Error leyendo contenido del build:', err);
+  }
+}
 
 if (fs.existsSync(buildPath)) {
   try {
-    // Servir frontend React estático
+    console.log('✅ Serviendo archivos estáticos desde:', buildPath);
+    
+    // Servir archivos estáticos del build
     app.use(express.static(buildPath));
 
-    // Todas las rutas que no sean /api ni /uploads servirán index.html para React Router
+    // Manejar todas las rutas que no sean API o uploads
     app.get('*', (req, res) => {
+      // Si es una ruta de API o uploads, no manejarla aquí
       if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/uploads')) {
-        // Dejar pasar la petición o responder 404 para rutas API y uploads no encontradas
-        return res.status(404).send('Not found');
+        return res.status(404).json({ error: 'Endpoint no encontrado' });
       }
-      // Para todas las demás rutas, servir index.html para que React Router maneje el routing
-      res.sendFile(path.join(buildPath, 'index.html'), (err) => {
-        if (err) {
-          console.error('Error enviando index.html:', err);
-          res.status(500).send('Error interno del servidor');
-        }
-      });
+
+      // Para todas las demás rutas (incluyendo /dashboard, /login, etc.), servir index.html
+      const indexPath = path.join(buildPath, 'index.html');
+      
+      if (fs.existsSync(indexPath)) {
+        console.log(`📄 Sirviendo index.html para ruta: ${req.originalUrl}`);
+        res.sendFile(indexPath, (err) => {
+          if (err) {
+            console.error('❌ Error enviando index.html:', err);
+            res.status(500).send('Error interno del servidor');
+          }
+        });
+      } else {
+        console.error('❌ index.html no encontrado en:', indexPath);
+        res.status(500).send('Error: index.html no encontrado');
+      }
     });
   } catch (err) {
-    console.error('Error sirviendo el build:', err);
+    console.error('❌ Error sirviendo el build:', err);
   }
 } else {
   console.warn('⚠️ La carpeta build no fue encontrada. El frontend no será servido.');
+  console.log('📁 Buscando build en:', buildPath);
 }
 
 // Middleware global para capturar errores en rutas
