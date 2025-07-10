@@ -43,7 +43,7 @@ app.use('/api', routes);
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Verificar y mostrar si la carpeta build existe
-const buildPath = path.join(__dirname, '..', 'build');
+const buildPath = path.join(__dirname, '../build'); 
 console.log('Buscando carpeta build en:', buildPath);
 console.log('¿Existe build?', fs.existsSync(buildPath));
 
