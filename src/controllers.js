@@ -78,13 +78,15 @@ const obtenerTareas = async (req, res) => {
         ORDER BY t.created_at DESC
       `);
     } else {
-      // Los miembros ven todas las tareas (creadas por admin o por ellos mismos)
+      // Los miembros ven todas las tareas con su estado de entrega personal
       result = await pool.query(`
         SELECT t.*, u.username AS creador_username,
                CASE 
                  WHEN e.usuario_id IS NOT NULL THEN 'Entregada'
-                 ELSE t.status 
-               END as status_mostrado
+                 ELSE 'Pendiente'
+               END as estado_entrega,
+               e.archivo as archivo_entregado,
+               e.fecha_entrega as fecha_entrega_usuario
         FROM tasks t
         LEFT JOIN users u ON t.creator_id = u.id
         LEFT JOIN entregas e ON t.id = e.tarea_id AND e.usuario_id = $1
@@ -383,14 +385,14 @@ const obtenerEstadisticas = async (req, res) => {
         SELECT 
           u.id,
           u.username,
-          COUNT(t.id) as total_tareas,
-          COUNT(CASE WHEN t.status = 'Pendiente' THEN 1 END) as pendientes,
-          COUNT(CASE WHEN t.status = 'En progreso' THEN 1 END) as en_progreso,
-          COUNT(CASE WHEN t.status = 'Completada' THEN 1 END) as completadas,
-          COUNT(CASE WHEN e.usuario_id IS NOT NULL THEN 1 END) as entregadas
+          COUNT(DISTINCT t.id) as total_tareas_disponibles,
+          COUNT(DISTINCT CASE WHEN e.usuario_id = u.id THEN t.id END) as tareas_entregadas,
+          COUNT(DISTINCT CASE WHEN e.usuario_id = u.id AND t.status = 'Pendiente' THEN t.id END) as tareas_pendientes_entregadas,
+          COUNT(DISTINCT CASE WHEN e.usuario_id = u.id AND t.status = 'En progreso' THEN t.id END) as tareas_en_progreso_entregadas,
+          COUNT(DISTINCT CASE WHEN e.usuario_id = u.id AND t.status = 'Completada' THEN t.id END) as tareas_completadas_entregadas
         FROM users u
-        LEFT JOIN tasks t ON u.id = t.creator_id
-        LEFT JOIN entregas e ON t.id = e.tarea_id
+        CROSS JOIN tasks t
+        LEFT JOIN entregas e ON t.id = e.tarea_id AND e.usuario_id = u.id
         WHERE u.role = 'miembro'
         GROUP BY u.id, u.username
         ORDER BY u.username

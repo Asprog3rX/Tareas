@@ -65,17 +65,17 @@ if (fs.existsSync(buildPath)) {
   try {
     console.log('✅ Serviendo archivos estáticos desde:', buildPath);
     
-    // Servir archivos estáticos del build
+    // Servir archivos estáticos del build (CSS, JS, imágenes, etc.)
     app.use(express.static(buildPath));
 
-    // Manejar todas las rutas que no sean API o uploads
+    // IMPORTANTE: Catch-all para React Router - debe ir al final
     app.get('*', (req, res) => {
       // Si es una ruta de API o uploads, no manejarla aquí
       if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/uploads')) {
         return res.status(404).json({ error: 'Endpoint no encontrado' });
       }
 
-      // Para todas las demás rutas (incluyendo /dashboard, /login, etc.), servir index.html
+      // Para TODAS las demás rutas (/, /login, /register, /dashboard, etc.), servir index.html
       const indexPath = path.join(buildPath, 'index.html');
       
       if (fs.existsSync(indexPath)) {
@@ -91,6 +91,7 @@ if (fs.existsSync(buildPath)) {
         res.status(500).send('Error: index.html no encontrado');
       }
     });
+    
   } catch (err) {
     console.error('❌ Error sirviendo el build:', err);
   }
