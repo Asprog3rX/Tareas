@@ -49,31 +49,43 @@ console.log('¿Existe build?', fs.existsSync(buildPath));
 
 if (fs.existsSync(buildPath)) {
   try {
-    // Servir frontend React estático
+    console.log('✅ Serviendo archivos estáticos desde:', buildPath);
+    
+    // Servir archivos estáticos del build (CSS, JS, imágenes, etc.)
     app.use(express.static(buildPath));
 
-    // Todas las rutas que no sean /api ni /uploads servirán index.html para React Router
+    // IMPORTANTE: Catch-all para React Router - debe ir al final
     app.get('*', (req, res) => {
+      // Si es una ruta de API o uploads, no manejarla aquí
       if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/uploads')) {
-        // Dejar pasar la petición o responder 404 para rutas API y uploads no encontradas
-        return res.status(404).send('Not found');
+        return res.status(404).json({ error: 'Endpoint no encontrado' });
       }
-      // Para todas las demás rutas, servir index.html para que React Router maneje el routing
-      res.sendFile(path.join(buildPath, 'index.html'), (err) => {
-        if (err) {
-          console.error('Error enviando index.html:', err);
-          res.status(500).send('Error interno del servidor');
-        }
-      });
+
+      // Para TODAS las demás rutas (/, /login, /register, /dashboard, etc.), servir index.html
+      const indexPath = path.join(buildPath, 'index.html');
+      
+      if (fs.existsSync(indexPath)) {
+        console.log(`📄 Sirviendo index.html para ruta: ${req.originalUrl}`);
+        res.sendFile(indexPath, (err) => {
+          if (err) {
+            console.error('❌ Error enviando index.html:', err);
+            res.status(500).send('Error interno del servidor');
+          }
+        });
+      } else {
+        console.error('❌ index.html no encontrado en:', indexPath);
+        res.status(500).send('Error: index.html no encontrado');
+      }
     });
+    
   } catch (err) {
-    console.error('Error sirviendo el build:', err);
+    console.error('❌ Error sirviendo el build:', err);
   }
 } else {
   console.warn('⚠️ La carpeta build no fue encontrada. El frontend no será servido.');
 }
 
-// Middleware global para capturar errores en rutas
+// Middleware global para capturar errores en rutas (debe ir ANTES del catch-all)
 app.use((err, req, res, next) => {
   console.error('Error capturado en middleware global:', err);
   res.status(500).json({ error: 'Error interno del servidor', message: err.message, stack: err.stack });
