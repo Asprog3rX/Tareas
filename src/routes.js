@@ -133,15 +133,15 @@ router.head(
   verificarArchivoEntrega
 );
 
-router.get('/entregas/:archivo', (req, res) => {
-  const { archivo } = req.params;
-  const filePath = path.join(__dirname, '..', 'uploads', archivo);
+router.get('/entregas/:filename', (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.join(__dirname, '..', 'uploads', filename);
 
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Archivo no encontrado' });
   }
 
-  res.download(filePath, archivo, (err) => {
+  res.download(filePath, filename, (err) => {
     if (err) {
       console.error('❌ Error al enviar archivo:', err);
       if (!res.headersSent) {
@@ -150,12 +150,7 @@ router.get('/entregas/:archivo', (req, res) => {
     }
   });
 });
-console.log('Rutas registradas:');
-router.stack.forEach((r) => {
-  if (r.route && r.route.path) {
-    console.log(`${Object.keys(r.route.methods).join(', ').toUpperCase()} ${r.route.path}`);
-  }
-});
+// Función para imprimir rutas registradas
 function printRoutes(router) {
   console.log('=== RUTAS REGISTRADAS ===');
   router.stack.forEach((layer) => {

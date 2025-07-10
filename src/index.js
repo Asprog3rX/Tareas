@@ -14,27 +14,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Función para listar rutas del router (incluye routers anidados)
-const getRoutesFromStack = (stack) =>
-  stack
-    .map((layer) => {
-      if (layer.route) {
-        return layer.route.path;
-      } else if (layer.name === 'router' && layer.handle.stack) {
-        return getRoutesFromStack(layer.handle.stack);
-      }
-      return null;
-    })
-    .flat()
-    .filter(Boolean);
-
-// Mostrar rutas cargadas en /api antes de usarlas
-try {
-  const allRoutes = getRoutesFromStack(routes.stack);
-  console.log('Rutas encontradas en router /api:', allRoutes);
-} catch (e) {
-  console.error('Error extrayendo rutas del router:', e);
-}
+// Mostrar que las rutas se están cargando
+console.log('✅ Cargando rutas API...');
 
 // Rutas API
 app.use('/api', routes);
@@ -42,24 +23,9 @@ app.use('/api', routes);
 // Servir archivos estáticos (por ejemplo, PDFs subidos)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// Verificar y mostrar si la carpeta build existe
+// Verificar si la carpeta build existe
 const buildPath = path.join(__dirname, '..', 'build');
-console.log('🔍 Buscando carpeta build en:', buildPath);
-console.log('📁 ¿Existe build?', fs.existsSync(buildPath));
-
-if (fs.existsSync(buildPath)) {
-  console.log('📋 Contenido del directorio build:');
-  try {
-    const files = fs.readdirSync(buildPath);
-    files.forEach(file => {
-      const filePath = path.join(buildPath, file);
-      const stats = fs.statSync(filePath);
-      console.log(`  📄 ${file} - ${stats.isDirectory() ? 'Directorio' : 'Archivo'}`);
-    });
-  } catch (err) {
-    console.error('❌ Error leyendo contenido del build:', err);
-  }
-}
+console.log('📁 Build encontrado:', fs.existsSync(buildPath));
 
 // Middleware global para capturar errores en rutas (debe ir ANTES del catch-all)
 app.use((err, req, res, next) => {
@@ -84,25 +50,7 @@ app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
 });
 
-// Log básico de rutas cargadas (manual)
-console.log('=== RUTAS REGISTRADAS ===');
-console.log('POST /api/register');
-console.log('POST /api/login');
-console.log('GET  /api/tasks');
-console.log('POST /api/tasks');
-console.log('PUT  /api/tasks/:id');
-console.log('DELETE /api/tasks/:id');
-console.log('PATCH /api/tasks/:id/status');
-console.log('GET  /api/tasks/:taskId/subtasks');
-console.log('POST /api/tasks/:taskId/subtasks');
-console.log('PUT  /api/subtasks/:id');
-console.log('DELETE /api/subtasks/:id');
-console.log('GET  /api/tasks/:taskId/entregas');
-console.log('POST /api/tasks/:id/entregas');
-console.log('POST /api/tasks/:id/entregas/file');
-console.log('GET  /api/tasks/:tareaId/entregas/:usuarioId/archivo');
-console.log('GET  /entregas/:archivo');
-console.log('=========================');
+console.log('✅ Servidor configurado correctamente');
 
 // Capturar errores no capturados globales para debug
 process.on('uncaughtException', (err) => {
