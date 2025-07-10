@@ -31,19 +31,10 @@ const {
   verificarRol
 } = require('./middleware/auth');
 
-
-// Middleware para loguear cada petición (comentado temporalmente)
-// router.use((req, res, next) => {
-//   console.log(`[API] ${req.method} ${req.path}`);
-//   next();
-// });
-
-console.log('Montando rutas de autenticación');
 // ===== RUTAS AUTENTICACIÓN =====
 router.post('/register', registrarUsuario);
 router.post('/login', loginUsuario);
 
-console.log('Montando rutas de tareas');
 // ===== TAREAS =====
 router.post('/tasks', verificarToken, verificarRol(['administrativo']), crearTarea);
 router.get('/tasks', verificarToken, obtenerTareas);
@@ -77,14 +68,12 @@ router.patch('/tasks/:id/status', verificarToken, async (req, res) => {
   }
 });
 
-console.log('Montando rutas de subtareas');
 // ===== SUBTAREAS =====
 router.get('/tasks/:taskId/subtasks', verificarToken, obtenerSubtareas);
 router.post('/tasks/:taskId/subtasks', verificarToken, verificarRol(['administrativo']), crearSubtarea);
 router.put('/subtasks/:id', verificarToken, verificarRol(['administrativo']), editarSubtarea);
 router.delete('/subtasks/:id', verificarToken, verificarRol(['administrativo']), eliminarSubtarea);
 
-console.log('Montando rutas de entregas');
 // ===== ENTREGAS =====
 router.get('/tasks/:taskId/entregas', verificarToken, obtenerEntregas);
 
@@ -150,6 +139,5 @@ router.get('/entregas/:filename', (req, res) => {
     }
   });
 });
-console.log('✅ Rutas API cargadas correctamente');
 
 module.exports = router;
