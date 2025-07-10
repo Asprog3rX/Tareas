@@ -15,6 +15,7 @@ const {
   eliminarSubtarea,
   upload,
   subirArchivoEntrega,
+  verificarArchivoEntrega,
   descargarArchivoEntrega,
   obtenerEntregas,
 } = require('./controllers');
@@ -120,6 +121,12 @@ router.get(
   '/tasks/:tareaId/entregas/:usuarioId/archivo',
   verificarToken,
   descargarArchivoEntrega
+);
+
+router.head(
+  '/tasks/:tareaId/entregas/:usuarioId/archivo',
+  verificarToken,
+  verificarArchivoEntrega
 );
 
 router.get('/entregas/:archivo', (req, res) => {

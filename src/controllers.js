@@ -246,10 +246,39 @@ const obtenerEntregas = async (req, res) => {
   }
 };
 
+// Verificar si archivo existe
+const verificarArchivoEntrega = async (req, res) => {
+  try {
+    console.log('Verificando archivo - Params recibidos:', req.params);
+    const { tareaId, usuarioId } = req.params;
+
+    const result = await pool.query(
+      'SELECT archivo FROM entregas WHERE tarea_id = $1 AND usuario_id = $2',
+      [tareaId, usuarioId]
+    );
+
+    if (result.rows.length === 0 || !result.rows[0].archivo) {
+      return res.status(404).json({ error: 'Archivo no encontrado en BD' });
+    }
+
+    const archivoNombre = result.rows[0].archivo;
+    const filePath = path.join(uploadDir, archivoNombre);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Archivo no encontrado en servidor' });
+    }
+
+    res.status(200).json({ existe: true, archivo: archivoNombre });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al verificar archivo' });
+  }
+};
+
 // Descargar archivo de entrega
 const descargarArchivoEntrega = async (req, res) => {
   try {
-    console.log('Params recibidos:', req.params);
+    console.log('Descargando archivo - Params recibidos:', req.params);
     const { tareaId, usuarioId } = req.params;
 
     const result = await pool.query(
@@ -286,6 +315,7 @@ module.exports = {
   editarSubtarea,
   eliminarSubtarea,
   subirArchivoEntrega,
+  verificarArchivoEntrega,
   descargarArchivoEntrega,
   obtenerEntregas,
 };
