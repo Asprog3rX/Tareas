@@ -225,6 +225,7 @@ const subirArchivoEntrega = async (req, res) => {
 const obtenerEntregas = async (req, res) => {
   try {
     const { taskId } = req.params;
+    console.log('Obteniendo entregas para tarea:', taskId);
 
     const result = await pool.query(
       `SELECT e.*, u.username
@@ -234,11 +235,14 @@ const obtenerEntregas = async (req, res) => {
       [taskId]
     );
 
+    console.log('Datos de entregas obtenidos de BD:', result.rows);
+
     const entregasConUrl = result.rows.map(entrega => ({
       ...entrega,
       fileUrl: entrega.archivo ? `/uploads/${entrega.archivo}` : null,
     }));
 
+    console.log('Entregas procesadas:', entregasConUrl);
     res.json(entregasConUrl);
   } catch (err) {
     console.error(err);
