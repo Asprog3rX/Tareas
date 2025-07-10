@@ -58,7 +58,13 @@ if (fs.existsSync(buildPath)) {
         // Dejar pasar la petición o responder 404 para rutas API y uploads no encontradas
         return res.status(404).send('Not found');
       }
-      res.sendFile(path.join(buildPath, 'index.html'));
+      // Para todas las demás rutas, servir index.html para que React Router maneje el routing
+      res.sendFile(path.join(buildPath, 'index.html'), (err) => {
+        if (err) {
+          console.error('Error enviando index.html:', err);
+          res.status(500).send('Error interno del servidor');
+        }
+      });
     });
   } catch (err) {
     console.error('Error sirviendo el build:', err);
