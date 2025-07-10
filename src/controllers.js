@@ -78,7 +78,7 @@ const obtenerTareas = async (req, res) => {
         ORDER BY t.created_at DESC
       `);
     } else {
-      // Los miembros solo ven sus propias tareas
+      // Los miembros ven todas las tareas (creadas por admin o por ellos mismos)
       result = await pool.query(`
         SELECT t.*, u.username AS creador_username,
                CASE 
@@ -88,7 +88,6 @@ const obtenerTareas = async (req, res) => {
         FROM tasks t
         LEFT JOIN users u ON t.creator_id = u.id
         LEFT JOIN entregas e ON t.id = e.tarea_id AND e.usuario_id = $1
-        WHERE t.creator_id = $1
         ORDER BY t.created_at DESC
       `, [userId]);
     }
@@ -350,7 +349,7 @@ const obtenerEstadisticas = async (req, res) => {
     let result;
     
     if (userRole === 'administrativo') {
-      // Estadísticas globales para administrativos
+      // Estadísticas globales solo de miembros para administrativos
       result = await pool.query(`
         SELECT 
           COUNT(*) as total_tareas,
@@ -361,9 +360,10 @@ const obtenerEstadisticas = async (req, res) => {
           COUNT(CASE WHEN e.usuario_id IS NOT NULL THEN 1 END) as entregadas
         FROM tasks t
         LEFT JOIN entregas e ON t.id = e.tarea_id
+        WHERE t.creator_id IN (SELECT id FROM users WHERE role = 'miembro')
       `);
     } else {
-      // Estadísticas personales para miembros
+      // Estadísticas de todas las tareas para miembros
       result = await pool.query(`
         SELECT 
           COUNT(*) as total_tareas,
@@ -374,7 +374,6 @@ const obtenerEstadisticas = async (req, res) => {
           COUNT(CASE WHEN e.usuario_id IS NOT NULL THEN 1 END) as entregadas
         FROM tasks t
         LEFT JOIN entregas e ON t.id = e.tarea_id AND e.usuario_id = $1
-        WHERE t.creator_id = $1
       `, [userId]);
     }
     
